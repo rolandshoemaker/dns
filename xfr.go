@@ -2,6 +2,8 @@ package dns
 
 import (
 	"time"
+
+	"golang.org/x/net/proxy"
 )
 
 // Envelope is used when doing a zone transfer with a remote server.
@@ -33,13 +35,9 @@ type Transfer struct {
 //	transfer = &dns.Transfer{Conn: dnscon}
 //	channel, err := transfer.In(message, master)
 //
-func (t *Transfer) In(q *Msg, a string) (env chan *Envelope, err error) {
-	timeout := dnsTimeout
-	if t.DialTimeout != 0 {
-		timeout = t.DialTimeout
-	}
+func (t *Transfer) In(q *Msg, a string, dialer proxy.Dialer) (env chan *Envelope, err error) {
 	if t.Conn == nil {
-		t.Conn, err = DialTimeout("tcp", a, timeout)
+		t.Conn, err = DialTimeout("tcp", a, dialer)
 		if err != nil {
 			return nil, err
 		}

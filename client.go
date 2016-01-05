@@ -7,6 +7,8 @@ import (
 	"io"
 	"net"
 	"time"
+
+	"golang.org/x/net/proxy"
 )
 
 const dnsTimeout time.Duration = 2 * time.Second
@@ -31,6 +33,7 @@ type Client struct {
 	WriteTimeout   time.Duration     // net.Conn.SetWriteTimeout value for connections, defaults to 2 seconds
 	TsigSecret     map[string]string // secret(s) for Tsig map[<zonename>]<base64 secret>, zonename must be fully qualified
 	SingleInflight bool              // if true suppress multiple outstanding queries for the same Qname, Qtype and Qclass
+	Dialer         proxy.Dialer
 	group          singleflight
 }
 
@@ -45,9 +48,9 @@ type Client struct {
 //	in, err := co.ReadMsg()
 //	co.Close()
 //
-func Exchange(m *Msg, a string) (r *Msg, err error) {
+func Exchange(m *Msg, a string, dialer proxy.Dialer) (r *Msg, err error) {
 	var co *Conn
-	co, err = DialTimeout("udp", a, dnsTimeout)
+	co, err = DialTimeout("udp", a, dialer)
 	if err != nil {
 		return nil, err
 	}
@@ -153,9 +156,9 @@ func (c *Client) writeTimeout() time.Duration {
 func (c *Client) exchange(m *Msg, a string) (r *Msg, rtt time.Duration, err error) {
 	var co *Conn
 	if c.Net == "" {
-		co, err = DialTimeout("udp", a, c.dialTimeout())
+		co, err = DialTimeout("udp", a, c.Dialer)
 	} else {
-		co, err = DialTimeout(c.Net, a, c.dialTimeout())
+		co, err = DialTimeout(c.Net, a, c.Dialer)
 	}
 	if err != nil {
 		return nil, 0, err
@@ -375,9 +378,9 @@ func Dial(network, address string) (conn *Conn, err error) {
 }
 
 // DialTimeout acts like Dial but takes a timeout.
-func DialTimeout(network, address string, timeout time.Duration) (conn *Conn, err error) {
+func DialTimeout(network, address string, dialer proxy.Dialer) (conn *Conn, err error) {
 	conn = new(Conn)
-	conn.Conn, err = net.DialTimeout(network, address, timeout)
+	conn.Conn, err = dialer.Dial(network, address)
 	if err != nil {
 		return nil, err
 	}

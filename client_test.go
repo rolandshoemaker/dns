@@ -9,6 +9,8 @@ import (
 )
 
 func TestClientSync(t *testing.T) {
+	dialer := &net.Dialer{}
+
 	HandleFunc("miek.nl.", HelloServer)
 	defer HandleRemove("miek.nl.")
 
@@ -22,6 +24,7 @@ func TestClientSync(t *testing.T) {
 	m.SetQuestion("miek.nl.", TypeSOA)
 
 	c := new(Client)
+	c.Dialer = dialer
 	r, _, err := c.Exchange(m, addrstr)
 	if err != nil {
 		t.Errorf("failed to exchange: %v", err)
@@ -30,7 +33,7 @@ func TestClientSync(t *testing.T) {
 		t.Errorf("failed to get an valid answer\n%v", r)
 	}
 	// And now with plain Exchange().
-	r, err = Exchange(m, addrstr)
+	r, err = Exchange(m, addrstr, dialer)
 	if err != nil {
 		t.Errorf("failed to exchange: %v", err)
 	}
@@ -52,12 +55,14 @@ func TestClientSyncBadId(t *testing.T) {
 	m := new(Msg)
 	m.SetQuestion("miek.nl.", TypeSOA)
 
+	dialer := &net.Dialer{}
 	c := new(Client)
+	c.Dialer = dialer
 	if _, _, err := c.Exchange(m, addrstr); err != ErrId {
 		t.Errorf("did not find a bad Id")
 	}
 	// And now with plain Exchange().
-	if _, err := Exchange(m, addrstr); err != ErrId {
+	if _, err := Exchange(m, addrstr, dialer); err != ErrId {
 		t.Errorf("did not find a bad Id")
 	}
 }
@@ -78,6 +83,7 @@ func TestClientEDNS0(t *testing.T) {
 	m.SetEdns0(2048, true)
 
 	c := new(Client)
+	c.Dialer = &net.Dialer{}
 	r, _, err := c.Exchange(m, addrstr)
 	if err != nil {
 		t.Errorf("failed to exchange: %v", err)
@@ -129,6 +135,7 @@ func TestClientEDNS0Local(t *testing.T) {
 	m.Extra = append(m.Extra, o)
 
 	c := new(Client)
+	c.Dialer = &net.Dialer{}
 	r, _, e := c.Exchange(m, addrstr)
 	if e != nil {
 		t.Logf("failed to exchange: %s", e.Error())
@@ -182,6 +189,7 @@ func ExampleTsigSecret_updateLeaseTSIG() {
 	m.Extra = append(m.Extra, leaseRr)
 
 	c := new(Client)
+	c.Dialer = &net.Dialer{}
 	m.SetTsig("polvi.", HmacMD5, 300, time.Now().Unix())
 	c.TsigSecret = map[string]string{"polvi.": "pRZgBrBvI4NAHZYhxmhs/Q=="}
 

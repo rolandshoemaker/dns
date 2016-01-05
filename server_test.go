@@ -122,6 +122,7 @@ func TestServing(t *testing.T) {
 	defer s.Shutdown()
 
 	c := new(Client)
+	c.Dialer = &net.Dialer{}
 	m := new(Msg)
 	m.SetQuestion("miek.nl.", TypeTXT)
 	r, _, err := c.Exchange(m, addrstr)
@@ -168,6 +169,7 @@ func BenchmarkServe(b *testing.B) {
 	defer s.Shutdown()
 
 	c := new(Client)
+	c.Dialer = &net.Dialer{}
 	m := new(Msg)
 	m.SetQuestion("miek.nl", TypeSOA)
 
@@ -190,6 +192,7 @@ func benchmarkServe6(b *testing.B) {
 	defer s.Shutdown()
 
 	c := new(Client)
+	c.Dialer = &net.Dialer{}
 	m := new(Msg)
 	m.SetQuestion("miek.nl", TypeSOA)
 
@@ -221,6 +224,7 @@ func BenchmarkServeCompress(b *testing.B) {
 	defer s.Shutdown()
 
 	c := new(Client)
+	c.Dialer = &net.Dialer{}
 	m := new(Msg)
 	m.SetQuestion("miek.nl", TypeSOA)
 	b.StartTimer()
@@ -326,6 +330,7 @@ func TestServingLargeResponses(t *testing.T) {
 	m.SetQuestion("web.service.example.", TypeANY)
 
 	c := new(Client)
+	c.Dialer = &net.Dialer{}
 	c.Net = "udp"
 	M.Lock()
 	M.max = 2
@@ -361,6 +366,7 @@ func TestServingResponse(t *testing.T) {
 	}
 
 	c := new(Client)
+	c.Dialer = &net.Dialer{}
 	m := new(Msg)
 	m.SetQuestion("miek.nl.", TypeTXT)
 	m.Response = false
@@ -435,7 +441,7 @@ func TestHandlerCloseTCP(t *testing.T) {
 
 	go func() {
 		defer server.Shutdown()
-		c := &Client{Net: "tcp"}
+		c := &Client{Net: "tcp", Dialer: &net.Dialer{}}
 		m := new(Msg).SetQuestion(hname, 1)
 		tries := 0
 	exchange:
@@ -514,6 +520,7 @@ func ExampleDecorateWriter() {
 	HandleFunc("miek.nl.", HelloServer)
 
 	c := new(Client)
+	c.Dialer = &net.Dialer{}
 	m := new(Msg)
 	m.SetQuestion("miek.nl.", TypeTXT)
 	_, _, err = c.Exchange(m, pc.LocalAddr().String())
