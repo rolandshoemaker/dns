@@ -205,7 +205,7 @@ func TestClientConn(t *testing.T) {
 	m := new(Msg)
 	m.SetQuestion("miek.nl.", TypeSOA)
 
-	cn, err := Dial("tcp", addrstr)
+	cn, err := Dial("tcp", addrstr, &net.Dialer{})
 	if err != nil {
 		t.Errorf("failed to dial %s: %v", addrstr, err)
 	}
